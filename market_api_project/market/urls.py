@@ -1,8 +1,11 @@
 from django.urls import path
-from market.views import tickers,ticker_history
+from market.views import tickers,ticker_history,newslist,newsdetails
 
 urlpatterns = [
 
      path('tickers/', tickers, name='tickers'),
-     path("market/history/", ticker_history, name="ticker_history"),]
+     path("history/", ticker_history, name="ticker_history"),
+     path("newslist/", newslist, name="newslist"),
+     path("newsdetails/", newsdetails, name="newsdetails"),
+     ]
 
