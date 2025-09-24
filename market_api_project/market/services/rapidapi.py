@@ -5,17 +5,20 @@ from decouple import config
 RAPIDAPI_KEY_1 = config('RAPIDAPI_KEY_1')
 RAPIDAPI_KEY_2 = config('RAPIDAPI_KEY_2')
 RAPIDAPI_KEY_3 = config('RAPIDAPI_KEY_3')
+RAPIDAPI_KEY_4 = config('RAPIDAPI_KEY_4')
 
 RAPIDAPI_HOST_1 = config("RAPIDAPI_HOST_1")
 RAPIDAPI_HOST_2 = config("RAPIDAPI_HOST_2")
 RAPIDAPI_HOST_3 = config("RAPIDAPI_HOST_3")
+RAPIDAPI_HOST_4 = config("RAPIDAPI_HOST_4")
 
 
 BASE_URLs = [
     "https://yahoo-finance15.p.rapidapi.com",
     "https://yh-finance.p.rapidapi.com",
     "https://yahoo-finance166.p.rapidapi.com",
-    "https://investing-com6.p.rapidapi.com/web-crawling/api/news/most-popular"
+    "https://investing-com6.p.rapidapi.com/web-crawling",
+    "https://yahoo-finance-api-data.p.rapidapi.com"
 ]
 
 HEADERS = [
@@ -30,6 +33,11 @@ HEADERS = [
     {
        "x-rapidapi-key": settings.RAPIDAPI_KEY_3,
         "x-rapidapi-host": settings.RAPIDAPI_HOST_3,
+    }
+    ,
+    {
+       "x-rapidapi-key": settings.RAPIDAPI_KEY_4,
+        "x-rapidapi-host": settings.RAPIDAPI_HOST_4,
     }
     
 ]
