@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from scrapping.services.yahoo_finance import get_yahoo_history,get_yahoo_ohlcv,get_yahoo_screener
+from scrapping.services.trading_view import get_tradingview_screener
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.http import JsonResponse
@@ -43,6 +44,18 @@ def top_losers(request):
         "url": request.build_absolute_uri(),
         "data": data
     })
+@api_view(["GET"])
+def most_active_tv(request):
+    region = request.GET.get("region", "america")
+    limit = int(request.GET.get("count", 20))
+    start = int(request.GET.get("start", 0))
+
+    data = get_tradingview_screener(region=region, limit=limit, start=start)
+    return Response({
+        "args": request.query_params,
+        "headers": dict(request.headers),
+        "url": request.build_absolute_uri(),
+        "data": data})
 
 @api_view(["GET"])
 def ohlcv_view(request, symbol):
