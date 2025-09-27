@@ -8,6 +8,7 @@ from market.services.rapidapi import call_api,BASE_URLs,HEADERS
 import time
 from .models import Ticker,TickerHistory
 import pandas as pd
+from datetime import datetime, timedelta
 
 # Create your views here.
 @api_view(["GET"])
@@ -381,7 +382,7 @@ def newsdetails(request):
                 errors.append(f"{base}: {str(e)}")
                 print(f"[newsdetails] Error with {base}: {str(e)}")
                 continue
-            time.sleep(1)  # polite delay after each API call
+        time.sleep(1)  # polite delay after each API call
 
         # If no article found from any API, return JSON with status and errors
         print(f"[newsdetails] No article found. Errors: {errors}")
@@ -502,7 +503,7 @@ def ticker_history(request):
                                 "rows_inserted": inserted,
                                 "sample": rows[:3]
                             })
-                            break  # ✅ success, don’t try other endpoints for this symbol
+                            break 
 
                     except Exception as e:
                         import traceback
@@ -622,5 +623,163 @@ def save_ticker_history(symbol, interval, raw_data):
         import traceback
         print(f"[save_ticker_history] Fatal error while saving {symbol}: {e}")
         print(traceback.format_exc())
+     
         return 0
 
+
+
+@api_view(["GET"])
+def charts(request):
+    """
+    Fetch chart data for one or multiple symbols, looping over multiple APIs.
+    """
+
+    default_end = datetime.today().strftime("%Y-%m-%d")
+    default_start = (datetime.today() - timedelta(days=30)).strftime("%Y-%m-%d")
+
+    try:
+        symbols_param = request.GET.get("symbol")
+        limit = int(request.GET.get("limit", 10))
+        range_ = request.GET.get("range", "1d")
+        start = request.GET.get("start", default_start)
+        end = request.GET.get("end", default_end)
+        metrics = request.GET.get("metrics", "total_revenue")
+        api_index = int(request.GET.get("api_index", 0))
+
+        if not symbols_param:
+            return Response(
+                {"status": "error", "message": "Missing ?symbol= param"},
+                status=400,
+            )
+        def clean_params(params):
+            """Remove None or empty params"""
+            return {k: v for k, v in params.items() if v is not None and v != ""}
+
+        symbols = [s.strip().upper() for s in symbols_param.split(",")]
+
+        results, skipped_calls = [], []
+
+        # --- ENDPOINTS (fixed) ---
+        ENDPOINT_SELECTION = {
+            "yahoo-finance-api-data": [
+                "chart/simple-chart"   # needs symbol + limit + range
+            ],
+            "seeking-alpha": [
+                "symbols/get-chart"  # ✅ corrected
+            ],
+            "investing-real-time": [
+                "stocks/chart"         # needs query + range
+            ],
+        }
+
+        # --- PARAM MAPPING (fixed) ---
+        PARAMS_MAP = {
+            "chart/simple-chart": lambda s, l, r, **kwargs: {
+                "symbol": s,
+                "limit": str(l),
+                "range": r,   # e.g. "1d", "1mo", "3mo"
+            },
+            "symbols/get-chart": lambda s, l, r, **kwargs: {
+                "symbols": s.lower(),
+                 "range": r ,# Seeking Alpha expects lowercase
+                
+            },
+            "stocks/chart": lambda s, l, r, **kwargs: {
+                "query": s,
+                "range": r,
+            },
+        }
+
+        def normalize_chart(raw):
+            """Normalize chart responses from different APIs."""
+            if not raw or not isinstance(raw, dict):
+                return []
+
+            # Yahoo Simple Chart → { data: { timestamps:[], closes:[] } }
+            if "data" in raw and isinstance(raw["data"], dict):
+                d = raw["data"]
+                if "timestamps" in d and "closes" in d:
+                    return [
+                        {"timestamp": t, "close": c}
+                        for t, c in zip(d["timestamps"], d["closes"])
+                    ]
+
+            # Seeking Alpha → { data: [...] }
+            if "data" in raw and isinstance(raw["data"], list):
+                return raw["data"]
+
+            # Investing.com → { chart: [...] }
+            if "chart" in raw and isinstance(raw["chart"], list):
+                return raw["chart"]
+
+            print(f"[normalize_chart] Unknown format, keys={list(raw.keys())}")
+            return []
+
+        # --- LOOP SYMBOLS ---
+        for symbol in symbols[:10]:  # safety cap at 10
+            got_data = False
+
+            for base in BASE_URLs:
+                host = base.split("//")[-1].split("/")[0]
+                key = next((k for k in ENDPOINT_SELECTION if k in host), None)
+
+                if not key:
+                    skipped_calls.append(
+                        {"symbol": symbol, "reason": f"{base}: No matching key"}
+                    )
+                    continue
+
+                endpoints = ENDPOINT_SELECTION[key]
+                for endpoint in endpoints:
+                    url = f"{base.rstrip('/')}/{endpoint.lstrip('/')}"
+                    params =clean_params(PARAMS_MAP[endpoint](
+                        symbol, limit, range_,
+                        start=start, end=end, metrics=metrics
+                    ))
+                    headers = HEADERS[api_index % len(HEADERS)]
+
+                    try:
+                        print(f"[DEBUG] Trying {url} with params={params}")
+                        response = requests.get(url, headers=headers, params=params, timeout=15)
+
+                        if response.status_code == 404:
+                            print(f"[charts] Skipping {url} (404 Not Found)")
+                            continue
+
+                        response.raise_for_status()
+                        raw = response.json()
+                        print(f"[charts] Raw response from {url}: {str(raw)[:200]}...")
+
+                        rows = normalize_chart(raw)
+                        if not rows:
+                            print(f"[charts] {url} returned no rows")
+                            continue
+
+                        results.append({
+                            "symbol": symbol,
+                            "endpoint": endpoint,
+                            "rows": rows[:10],  # sample first 10
+                        })
+                        got_data = True
+                        break  # ✅ got chart for this symbol
+
+                    except Exception as e:
+                        skipped_calls.append({"symbol": symbol, "reason": f"{url}: {str(e)}"})
+                        print(f"[charts] Error with {url}: {str(e)}")
+                        import traceback
+                        print(traceback.format_exc())
+                        continue
+
+                time.sleep(1)  # polite delay
+
+            if not got_data:
+                skipped_calls.append({"symbol": symbol, "reason": "No chart data from any API"})
+                print(f"[charts] Skipped {symbol}: no chart data")
+
+        return Response({"status": "success", "results": results, "skipped_calls": skipped_calls})
+
+    except Exception as e:
+        print("[charts] Fatal error:")
+        import traceback
+        print(traceback.format_exc())
+        return Response({"status": "error", "message": str(e)}, status=500)

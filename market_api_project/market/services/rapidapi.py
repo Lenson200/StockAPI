@@ -18,7 +18,10 @@ BASE_URLs = [
     "https://yh-finance.p.rapidapi.com",
     "https://yahoo-finance166.p.rapidapi.com",
     "https://investing-com6.p.rapidapi.com/web-crawling",
-    "https://yahoo-finance-api-data.p.rapidapi.com"
+    "https://yahoo-finance-api-data.p.rapidapi.com",
+    "https://seeking-alpha.p.rapidapi.com",
+     "https://investing-real-time.p.rapidapi.com", 
+
 ]
 
 HEADERS = [

@@ -37,6 +37,7 @@ ALLOWED_HOSTS = [
 
 INSTALLED_APPS = [
            "market",
+           "scrapping",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -127,11 +128,19 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+#keys
 RAPIDAPI_KEY_1 = config('RAPIDAPI_KEY_1')
 RAPIDAPI_KEY_2 = config('RAPIDAPI_KEY_2')
 RAPIDAPI_KEY_3 = config('RAPIDAPI_KEY_3')
 RAPIDAPI_KEY_4 = config('RAPIDAPI_KEY_4')
+RAPIDAPI_KEY_5 = config('RAPIDAPI_KEY_5')
+RAPIDAPI_KEY_6 = config('RAPIDAPI_KEY_6')
+
+#Hosts
 RAPIDAPI_HOST_1 = config("RAPIDAPI_HOST_1")
 RAPIDAPI_HOST_2 = config("RAPIDAPI_HOST_2")
 RAPIDAPI_HOST_3 = config("RAPIDAPI_HOST_3")
 RAPIDAPI_HOST_4 = config("RAPIDAPI_HOST_4")
+RAPIDAPI_HOST_5 = config("RAPIDAPI_HOST_5")
+RAPIDAPI_HOST_6 = config("RAPIDAPI_HOST_6")
+
