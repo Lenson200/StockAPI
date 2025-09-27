@@ -98,6 +98,28 @@ GET http://localhost:8000/api/tickers/?max_api_index=2&limit=10
      ```
      GET http://localhost:8000/api/market/tickers/
      ```
+## Important Notes on Scraping vs Official APIs
+
+This project provides two ways of getting stock market data:
+
+### Scraping App (Free, but Limited)
+- **How it works:** Extracts data directly from Yahoo Finance and TradingView websites.
+- **Pros:** No API key or subscription needed.
+- **Cons / Limitations:**
+  - Fragile: If Yahoo/TradingView update their site, scraping will break without warning.
+  - Unreliable: No guarantee of complete or timely data.
+  - Block Risk: Providers may block scrapers, causing sudden downtime.
+  - Maintenance Heavy: Frequent fixes may be required to keep it working.
+
+**Bottom line:** Scraping is fine for testing, demos, or proof-of-concept, but it is not recommended for production use.
+
+### Market App (RapidAPI Endpoints)
+- **How it works:** Uses official APIs via RapidAPI.
+- **Pros:** More reliable, scalable, and supported. Can upgrade to higher tiers if needed.
+- **Cons:** Requires a free RapidAPI account and key. Free tier has request limits.
+
+**Recommendation:**  
+For long-term stability and business use, prefer the Market App (RapidAPI). Use the Scraping App only as a fallback or for lightweight testing.
 
 ## Notes
 - For all `/api/` endpoints, a valid RapidAPI key is required in your `.env` file.
